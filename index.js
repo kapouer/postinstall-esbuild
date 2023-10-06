@@ -10,7 +10,7 @@ module.exports = async function (inputs, output, options) {
 	const isJS = extname(output) == ".js";
 
 	const esOpts = {
-		bundle: false,
+		sourcemap: false,
 		stdin: {
 			contents: null,
 			resolveDir: dirname(output),
@@ -34,7 +34,7 @@ module.exports = async function (inputs, output, options) {
 			'.woff': 'copy',
 			'.woff2': 'copy',
 			'.eot': 'copy',
-			'.svg': 'data',
+			'.svg': 'dataurl',
 			'.png': 'copy',
 			'.webp': 'copy'
 		}
@@ -43,14 +43,15 @@ module.exports = async function (inputs, output, options) {
 	if (isJS) {
 		esOpts.bundle = false;
 		esOpts.stdin.loader = 'js';
-		esOpts.stdin.contents = await Promise.all(inputs.map(async input => {
+		esOpts.stdin.contents = (await Promise.all(inputs.map(async input => {
 			const data = await fs.readFile(input);
 			return `(() => {
 				${data}
 			})();`;
-		}));
+		}))).join('\n');
 	} else {
 		esOpts.bundle = true;
+		esOpts.stdin.loader = 'css';
 		esOpts.stdin.contents = inputs.map(input => {
 			return `@import "${input}";`;
 		}).join('\n');
