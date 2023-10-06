@@ -1,0 +1,49 @@
+{
+  "name": "postinstall-esbuild",
+  "version": "0.9.0",
+  "description": "postinstall to bundle and minify lists of js/css using esbuild",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kapouer/postinstall-esbuild.git"
+  },
+  "keywords": [
+    "postinstall",
+    "esbuild"
+  ],
+  "author": "Jérémy Lal <kapouer@melix.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kapouer/postinstall-esbuild/issues"
+  },
+  "homepage": "https://github.com/kapouer/postinstall-esbuild#readme",
+  "dependencies": {
+    "browserslist": "^4.22.1",
+    "esbuild": "^0.19.4",
+    "esbuild-plugin-browserslist": "^0.9.1",
+    "postinstall": "^0.8.0"
+  },
+  "devDependencies": {
+    "@kapouer/eslint-config": "^1.9.1",
+    "mocha": "^10.2.0"
+  },
+  "mocha": {
+    "exit": true
+  },
+  "eslintConfig": {
+    "extends": "@kapouer/eslint-config",
+    "overrides": [
+      {
+        "files": [
+          "test/*.js"
+        ],
+        "env": {
+          "mocha": true
+        }
+      }
+    ]
+  }
+}
