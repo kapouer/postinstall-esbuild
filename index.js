@@ -1,16 +1,22 @@
-const { dirname, basename, extname } = require('node:path');
-const { promises: fs } = require('node:fs');
+const { dirname, basename, extname, relative } = require('node:path');
+const { createReadStream } = require('node:fs');
 
 const { build } = require("esbuild");
 const { esbuildPluginBrowserslist } = require('esbuild-plugin-browserslist');
 const browserslist = require('browserslist');
+const { SourceMapGenerator } = require('source-map');
+const { createInterface } = require('node:readline/promises');
+const { buffer } = require('node:stream/consumers');
+const { PassThrough } = require('node:stream');
+
 
 
 module.exports = async function (inputs, output, options) {
 	const isJS = extname(output) == ".js";
 
 	const esOpts = {
-		sourcemap: false,
+		sourcemap: true,
+		sourcesContent: false,
 		stdin: {
 			contents: null,
 			resolveDir: dirname(output),
@@ -41,14 +47,42 @@ module.exports = async function (inputs, output, options) {
 	};
 
 	if (isJS) {
+		// concatenation similar to postinstall-js
 		esOpts.bundle = false;
+		esOpts.sourcemap = true;
 		esOpts.stdin.loader = 'js';
-		esOpts.stdin.contents = (await Promise.all(inputs.map(async input => {
-			const data = await fs.readFile(input);
-			return `(() => {
-				${data}
-			})();`;
-		}))).join('\n');
+		const sourceMap = new SourceMapGenerator({ file: output });
+		const pt = new PassThrough();
+		const consumer = buffer(pt);
+		let offset = 0;
+		for (const input of inputs) {
+			let i = 0;
+			const source = relative(esOpts.stdin.resolveDir, input);
+			const inputStream = createReadStream(input);
+			for await (const line of createInterface({
+				input: inputStream,
+				crlfDelay: Infinity
+			})) {
+				i += 1;
+				sourceMap.addMapping({
+					source,
+					original: {
+						line: i,
+						column: 0
+					},
+					generated: {
+						line: offset + i,
+						column: 0
+					}
+				});
+				pt.write(line + '\n');
+			}
+			inputStream.close();
+			offset += i;
+		}
+		pt.write(inlineMap(sourceMap));
+		pt.end();
+		esOpts.stdin.contents = await consumer;
 	} else {
 		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';
@@ -62,3 +96,7 @@ module.exports = async function (inputs, output, options) {
 	if (errors.length) throw new Error(errors.join('\n'));
 	if (warnings.length) console.warn(warnings.join('\n'));
 };
+
+function inlineMap(map) {
+	return '//# sourceMappingURL=data:application/json;charset=utf-8;base64,' + Buffer.from(map.toString()).toString('base64');
+}

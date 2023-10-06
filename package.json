@@ -24,7 +24,8 @@
     "browserslist": "^4.22.1",
     "esbuild": "^0.19.4",
     "esbuild-plugin-browserslist": "^0.9.1",
-    "postinstall": "^0.8.0"
+    "postinstall": "^0.8.0",
+    "source-map": "^0.7.4"
   },
   "devDependencies": {
     "@kapouer/eslint-config": "^1.9.1",
