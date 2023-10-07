@@ -85,12 +85,14 @@ module.exports = async function (inputs, output, options) {
 		esOpts.stdin.contents = await consumer;
 	} else {
 		esOpts.bundle = true;
-		esOpts.stdin.loader = 'css';
-		esOpts.stdin.contents = inputs.map(input => {
-			return `@import "${input}";`;
-		}).join('\n');
+		if (inputs.length == 1) {
+			delete esOpts.stdin;
+			esOpts.entryPoints = inputs;
+		} else {
+			esOpts.stdin.loader = 'css';
+			esOpts.stdin.contents = inputs.map(input => `@import "${input}";`).join('\n');
+		}
 	}
-
 	const result = await build(esOpts);
 	const { errors, warnings } = result;
 	if (errors.length) throw new Error(errors.join('\n'));

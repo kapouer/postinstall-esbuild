@@ -3,7 +3,7 @@ const { promises: fs } = require('fs');
 
 const pjs = require('..');
 
-describe("Basic bundling", () => {
+describe("js bundling", () => {
 	before(async () => {
 		await fs.rm(__dirname + '/output', { recursive: true, force: true });
 		await fs.mkdir(__dirname + '/output', { recursive: true });
