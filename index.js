@@ -11,7 +11,7 @@ const { PassThrough } = require('node:stream');
 
 
 
-module.exports = async function (inputs, output, options) {
+module.exports = async function (inputs, output, options = {}) {
 	const isJS = extname(output) == ".js";
 
 	const resolveDir = dirname(output);
