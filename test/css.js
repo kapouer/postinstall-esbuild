@@ -49,7 +49,10 @@ describe("css bundling", () => {
 			result.includes('body{font-size:16px}body{background:red}body{color:red}')
 		);
 		const obj = JSON.parse(await fs.readFile(__dirname + '/output/css/sampleBoth.css.map'));
-		assert.deepEqual(obj.sources, ["../../css/sample1.css", "../../css/sample2.css"]);
+		assert.deepEqual(obj.sources, [
+			"../../css/sample1.css",
+			"../../css/sample2.css"
+		]);
 		assert.ok(result.includes('/*# sourceMappingURL=sampleBoth.css.map */'));
 	});
 });
