@@ -19,6 +19,7 @@ module.exports = async function (inputs, output, options) {
 	const esOpts = {
 		sourcemap: true,
 		sourcesContent: false,
+		preserveSymlinks: true,
 		stdin: {
 			contents: null,
 			resolveDir,
