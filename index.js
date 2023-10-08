@@ -14,12 +14,14 @@ const { PassThrough } = require('node:stream');
 module.exports = async function (inputs, output, options) {
 	const isJS = extname(output) == ".js";
 
+	const resolveDir = dirname(output);
+
 	const esOpts = {
 		sourcemap: true,
 		sourcesContent: false,
 		stdin: {
 			contents: null,
-			resolveDir: dirname(output),
+			resolveDir,
 			sourcefile: basename(output)
 		},
 		outfile: output,
@@ -49,7 +51,6 @@ module.exports = async function (inputs, output, options) {
 	if (isJS) {
 		// concatenation similar to postinstall-js
 		esOpts.bundle = false;
-		esOpts.sourcemap = true;
 		esOpts.stdin.loader = 'js';
 		const sourceMap = new SourceMapGenerator({ file: output });
 		const pt = new PassThrough();
@@ -57,7 +58,7 @@ module.exports = async function (inputs, output, options) {
 		let offset = 0;
 		for (const input of inputs) {
 			let i = 0;
-			const source = relative(esOpts.stdin.resolveDir, input);
+			const source = relative(resolveDir, input);
 			const inputStream = createReadStream(input);
 			for await (const line of createInterface({
 				input: inputStream,
@@ -85,13 +86,11 @@ module.exports = async function (inputs, output, options) {
 		esOpts.stdin.contents = await consumer;
 	} else {
 		esOpts.bundle = true;
-		if (inputs.length == 1) {
-			delete esOpts.stdin;
-			esOpts.entryPoints = inputs;
-		} else {
-			esOpts.stdin.loader = 'css';
-			esOpts.stdin.contents = inputs.map(input => `@import "${input}";`).join('\n');
-		}
+		esOpts.stdin.loader = 'css';
+		esOpts.stdin.contents = inputs.map(input => {
+			const source = relative(resolveDir, input);
+			return `@import "${source}";`;
+		}).join('\n');
 	}
 	const result = await build(esOpts);
 	const { errors, warnings } = result;
