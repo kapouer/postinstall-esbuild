@@ -5,12 +5,12 @@ const pjs = require('..');
 
 describe("js bundling", () => {
 	before(async () => {
-		await fs.rm(__dirname + '/output', { recursive: true, force: true });
-		await fs.mkdir(__dirname + '/output', { recursive: true });
+		await fs.rm(__dirname + '/output/js', { recursive: true, force: true });
+		await fs.mkdir(__dirname + '/output/js', { recursive: true });
 	});
 	it("bundles independent files", async () => {
 		const inputs = [__dirname + '/js/sample1.js', __dirname + '/js/sample2.js'];
-		const output = __dirname + '/output/sample.js';
+		const output = __dirname + '/output/js/sample.js';
 		await pjs(
 			inputs,
 			output,
@@ -24,7 +24,7 @@ describe("js bundling", () => {
 
 	it("bundles with async support", async () => {
 		const inputs = [__dirname + '/js/sample3.js'];
-		const output = __dirname + '/output/sample3.js';
+		const output = __dirname + '/output/js/sample3.js';
 		await pjs(
 			inputs,
 			output,
