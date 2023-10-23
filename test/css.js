@@ -14,7 +14,7 @@ describe("css bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{ minify: true }
+			{ minify: true, sourceMap: true }
 		);
 		const result = await fs.readFile(output);
 		assert.ok(
@@ -28,7 +28,7 @@ describe("css bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{ minify: true, browsers: 'safari >= 12' }
+			{ minify: true, browsers: 'safari >= 12', sourceMap: true }
 		);
 		const result = await fs.readFile(output);
 		assert.ok(
@@ -42,7 +42,7 @@ describe("css bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{minify: true}
+			{ minify: true, sourceMap: true }
 		);
 		const result = await fs.readFile(output);
 		assert.ok(
@@ -60,7 +60,8 @@ describe("css bundling", () => {
 		const output = __dirname + '/output/css/sub.css';
 		await pjs(
 			inputs,
-			output
+			output,
+			{ sourceMap: true }
 		);
 		const obj = JSON.parse(await fs.readFile(__dirname + '/output/css/sub.css.map'));
 		assert.deepEqual(obj.sources, [

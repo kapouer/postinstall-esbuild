@@ -13,7 +13,7 @@ module.exports = async function (inputs, output, options = {}) {
 	const isJS = extname(output) == ".js";
 
 	const resolveDir = dirname(output);
-	const sourceMap = options.sourceMap ?? true;
+	const sourceMap = options.sourceMap ?? false;
 
 	const esOpts = {
 		sourcemap: sourceMap,

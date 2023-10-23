@@ -14,7 +14,7 @@ describe("js bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{}
+			{ sourceMap: true }
 		);
 		const result = await fs.readFile(output);
 		assert.ok(result.includes('coco'));
@@ -74,7 +74,7 @@ describe("js bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{ browsers: "defaults and not dead and not firefox < 53" }
+			{ browsers: "defaults and not dead and not firefox < 53", sourceMap: true }
 		);
 		const result = await fs.readFile(output);
 		assert.ok(result.includes('coco'));

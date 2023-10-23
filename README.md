@@ -28,6 +28,8 @@ A Browserslist query string
 
 Pass `minify: false` to disable minification.
 
-### Caveats
+### sourceMap
 
-Support for source maps is not available and will be added eventually.
+Pass `sourceMap: true` to output "*.map" source maps.
+
+Pass `sourceMap: false` to disable and allow passing Buffers in inputs.
