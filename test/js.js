@@ -24,7 +24,7 @@ describe("js bundling", () => {
 
 	it("bundles independent files without sourceMap", async () => {
 		const inputs = [__dirname + '/js/sample1.js', __dirname + '/js/sample2.js'];
-		const output = __dirname + '/output/js/sample.js';
+		const output = __dirname + '/output/js/sample5.js';
 		await pjs(
 			inputs,
 			output,
@@ -33,6 +33,25 @@ describe("js bundling", () => {
 		const result = await fs.readFile(output);
 		assert.ok(result.includes('coco'));
 		assert.ok(result.includes('caca'));
+		assert.ok(!result.includes('//# sourceMappingURL=sample.js.map'));
+	});
+
+	it("bundles independent files and buffers without sourceMap", async () => {
+		const inputs = [
+			__dirname + '/js/sample1.js',
+			__dirname + '/js/sample2.js',
+			Buffer.from(`console.log("test");`)
+		];
+		const output = __dirname + '/output/js/sample6.js';
+		await pjs(
+			inputs,
+			output,
+			{ sourceMap: false }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(result.includes('coco'));
+		assert.ok(result.includes('caca'));
+		assert.ok(result.includes('console.log("test")'));
 		assert.ok(!result.includes('//# sourceMappingURL=sample.js.map'));
 	});
 

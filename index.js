@@ -86,7 +86,14 @@ module.exports = async function (inputs, output, options = {}) {
 		} else {
 			let len = inputs.length;
 			for (const input of inputs) {
-				const inputStream = createReadStream(input);
+				let inputStream;
+				if (Buffer.isBuffer(input)) {
+					inputStream = new PassThrough();
+					inputStream.write(input);
+					inputStream.end();
+				} else {
+					inputStream = createReadStream(input);
+				}
 				pt = inputStream.pipe(pt, { end: false });
 				inputStream.once('error', err => {
 					pt.emit('error', err);
