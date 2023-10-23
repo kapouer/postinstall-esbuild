@@ -9,15 +9,14 @@ const { createInterface } = require('node:readline/promises');
 const { buffer } = require('node:stream/consumers');
 const { PassThrough } = require('node:stream');
 
-
-
 module.exports = async function (inputs, output, options = {}) {
 	const isJS = extname(output) == ".js";
 
 	const resolveDir = dirname(output);
+	const sourceMap = options.sourceMap ?? true;
 
 	const esOpts = {
-		sourcemap: true,
+		sourcemap: sourceMap,
 		sourcesContent: false,
 		preserveSymlinks: true,
 		stdin: {
@@ -53,38 +52,49 @@ module.exports = async function (inputs, output, options = {}) {
 		// concatenation similar to postinstall-js
 		esOpts.bundle = false;
 		esOpts.stdin.loader = 'js';
-		const sourceMap = new SourceMapGenerator({ file: output });
-		const pt = new PassThrough();
-		const consumer = buffer(pt);
-		let offset = 0;
-		for (const input of inputs) {
-			let i = 0;
-			const source = relative(resolveDir, input);
-			const inputStream = createReadStream(input);
-			for await (const line of createInterface({
-				input: inputStream,
-				crlfDelay: Infinity
-			})) {
-				i += 1;
-				sourceMap.addMapping({
-					source,
-					original: {
-						line: i,
-						column: 0
-					},
-					generated: {
-						line: offset + i,
-						column: 0
-					}
-				});
-				pt.write(line + '\n');
+		let pt = new PassThrough();
+		if (sourceMap) {
+			const sourceMapGen = new SourceMapGenerator({ file: output });
+			let offset = 0;
+			for (const input of inputs) {
+				let i = 0;
+				const source = relative(resolveDir, input);
+				const inputStream = createReadStream(input);
+				for await (const line of createInterface({
+					input: inputStream,
+					crlfDelay: Infinity
+				})) {
+					i += 1;
+					sourceMapGen.addMapping({
+						source,
+						original: {
+							line: i,
+							column: 0
+						},
+						generated: {
+							line: offset + i,
+							column: 0
+						}
+					});
+					pt.write(line + '\n');
+				}
+				inputStream.close();
+				offset += i;
 			}
-			inputStream.close();
-			offset += i;
+			pt.write(inlineMap(sourceMapGen));
+			pt.end();
+		} else {
+			let len = inputs.length;
+			for (const input of inputs) {
+				const inputStream = createReadStream(input);
+				pt = inputStream.pipe(pt, { end: false });
+				inputStream.once('error', err => {
+					pt.emit('error', err);
+				});
+				inputStream.once('end', () => --len == 0 && pt.emit('end'));
+			}
 		}
-		pt.write(inlineMap(sourceMap));
-		pt.end();
-		esOpts.stdin.contents = await consumer;
+		esOpts.stdin.contents = await buffer(pt);
 	} else {
 		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';

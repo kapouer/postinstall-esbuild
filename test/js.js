@@ -22,6 +22,33 @@ describe("js bundling", () => {
 		assert.ok(result.includes('//# sourceMappingURL=sample.js.map'));
 	});
 
+	it("bundles independent files without sourceMap", async () => {
+		const inputs = [__dirname + '/js/sample1.js', __dirname + '/js/sample2.js'];
+		const output = __dirname + '/output/js/sample.js';
+		await pjs(
+			inputs,
+			output,
+			{sourceMap: false}
+		);
+		const result = await fs.readFile(output);
+		assert.ok(result.includes('coco'));
+		assert.ok(result.includes('caca'));
+		assert.ok(!result.includes('//# sourceMappingURL=sample.js.map'));
+	});
+
+	it("bundles independent files without sourceMap and with an error", async () => {
+		const inputs = [__dirname + '/js/sample1.js', __dirname + '/js/sampleFail.js'];
+		const output = __dirname + '/output/js/sample.js';
+		await assert.rejects(async () => pjs(
+			inputs,
+			output,
+			{ sourceMap: false }
+		), {
+			name: 'Error',
+			code: 'ENOENT'
+		});
+	});
+
 	it("bundles with async support", async () => {
 		const inputs = [__dirname + '/js/sample3.js'];
 		const output = __dirname + '/output/js/sample3.js';
