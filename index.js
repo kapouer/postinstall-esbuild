@@ -8,6 +8,7 @@ const { SourceMapGenerator } = require('source-map');
 const { createInterface } = require('node:readline/promises');
 const { buffer } = require('node:stream/consumers');
 const { PassThrough } = require('node:stream');
+const mime = require('mime/lite');
 
 module.exports = async function (inputs, output, options = {}) {
 	const isJS = extname(output) == ".js";
@@ -103,6 +104,7 @@ module.exports = async function (inputs, output, options = {}) {
 		}
 		esOpts.stdin.contents = await buffer(pt);
 	} else {
+		esOpts.plugins.push(http());
 		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';
 		esOpts.stdin.contents = inputs.map(input => {
@@ -118,4 +120,71 @@ module.exports = async function (inputs, output, options = {}) {
 
 function inlineMap(map) {
 	return '//# sourceMappingURL=data:application/json;charset=utf-8;base64,' + Buffer.from(map.toString()).toString('base64');
+}
+
+function http({
+	userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
+} = {}) {
+	return {
+		name: "http",
+		setup({ onResolve, onLoad, initialOptions }) {
+			onResolve({ filter: /^https?:\/\// }, args => {
+				return {
+					path: args.path,
+					namespace: "http-url"
+				};
+			});
+			onResolve({ filter: /.*/, namespace: "http-url" }, args => {
+				return {
+					path: new URL(args.path, args.importer).toString(),
+					namespace: "http-url"
+				};
+			});
+			onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
+				const { path } = args;
+				const response = await fetch(path, {
+					headers: {
+						'User-Agent': userAgent
+					}
+				});
+				if (!response.ok) {
+					return {
+						errors: [{
+							text: response.statusText,
+							detail: response.status
+						}]
+					};
+				}
+				const contentType = response.headers.get('content-type');
+				if (!contentType) {
+					return {
+						errors: [{
+							text: 'Missing content-type',
+							detail: new Error(path)
+						}]
+					};
+				}
+				const ext = mime.getExtension(contentType);
+				if (!ext) {
+					return {
+						errors: [{
+							text: 'Unknown content-type',
+							detail: new Error(contentType)
+						}]
+					};
+				}
+				const loader = initialOptions.loader['.' + ext];
+				if (!loader) {
+					return {
+						errors: [{
+							text: 'Unknown extension',
+							detail: new Error(ext)
+						}]
+					};
+				}
+				const contents = await response.text();
+				return { contents, loader };
+			});
+		}
+	};
 }

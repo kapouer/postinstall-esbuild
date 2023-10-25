@@ -6,6 +6,8 @@ It runs `esbuild` on inputs, and concatenate bundles on output.
 
 Supports iife js or css.
 
+Bundles remote dependencies.
+
 ## Usage
 
 The plugin can be called directly, or through `postinstall`.

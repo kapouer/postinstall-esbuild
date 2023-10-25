@@ -68,4 +68,16 @@ describe("css bundling", () => {
 			"../../css/sub.css"
 		]);
 	});
+
+	it("bundles remote files", async () => {
+		const inputs = [__dirname + '/css/remote.css'];
+		const output = __dirname + '/output/css/remote.css';
+		await pjs(
+			inputs,
+			output
+		);
+		const result = await fs.readFile(output);
+		assert.ok(result.includes('font-weight:200;font-display:swap'));
+		assert.ok(result.includes('.woff2'));
+	});
 });
