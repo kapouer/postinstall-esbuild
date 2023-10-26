@@ -48,7 +48,7 @@ module.exports = async function (inputs, output, options = {}) {
 
 	if (isJS) {
 		// concatenation similar to postinstall-js
-		esOpts.bundle = false;
+		esOpts.bundle = Boolean(options.bundle);
 		esOpts.format = 'iife';
 		esOpts.stdin.loader = 'js';
 		let buf;
