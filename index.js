@@ -105,8 +105,12 @@ module.exports = async function (inputs, output, options = {}) {
 		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';
 		esOpts.stdin.contents = inputs.map(input => {
-			const source = relative(resolveDir, input);
-			return `@import "${source}";`;
+			if (/^https?:\/\//.test(input)) {
+				return `@import "${input}";`;
+			} else {
+				return `@import "${relative(resolveDir, input)}";`;
+			}
+
 		}).join('\n');
 	}
 	const result = await build(esOpts);
