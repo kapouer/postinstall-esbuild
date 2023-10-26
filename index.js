@@ -16,6 +16,9 @@ module.exports = async function (inputs, output, options = {}) {
 	const resolveDir = dirname(output);
 	const sourceMap = options.sourceMap ?? false;
 
+	const browsers = browserslist(options.browsers ?? 'defaults');
+	const userAgent = browsersToUserAgent(browsers);
+
 	const esOpts = {
 		sourcemap: sourceMap,
 		sourcesContent: false,
@@ -32,7 +35,7 @@ module.exports = async function (inputs, output, options = {}) {
 		ignoreAnnotations: true,
 		legalComments: 'none',
 		plugins: [
-			esbuildPluginBrowserslist(browserslist(options.browsers ?? 'defaults'), {
+			esbuildPluginBrowserslist(browsers, {
 				printUnknownTargets: false
 			})
 		],
@@ -104,7 +107,7 @@ module.exports = async function (inputs, output, options = {}) {
 		}
 		esOpts.stdin.contents = await buffer(pt);
 	} else {
-		esOpts.plugins.push(http());
+		esOpts.plugins.push(http(userAgent));
 		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';
 		esOpts.stdin.contents = inputs.map(input => {
@@ -122,9 +125,7 @@ function inlineMap(map) {
 	return '//# sourceMappingURL=data:application/json;charset=utf-8;base64,' + Buffer.from(map.toString()).toString('base64');
 }
 
-function http({
-	userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
-} = {}) {
+function http(userAgent) {
 	return {
 		name: "http",
 		setup({ onResolve, onLoad, initialOptions }) {
@@ -182,9 +183,22 @@ function http({
 						}]
 					};
 				}
-				const contents = await response.text();
+				const contents = new Uint8Array(await response.arrayBuffer());
 				return { contents, loader };
 			});
 		}
 	};
+}
+
+function browsersToUserAgent(browsers) {
+	for (const browser of ['Firefox', 'Safari', 'Chrome']) {
+		const lb = browser.toLowerCase();
+		const minUa = browsers
+			.filter(str => str.includes(lb))
+			.map(str => parseFloat(str.replace(lb, '')))
+			.sort((a, b) => a - b).shift();
+		if (minUa) {
+			return `Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 ${browser}/${minUa}.0`;
+		}
+	}
 }
