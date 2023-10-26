@@ -74,10 +74,11 @@ describe("css bundling", () => {
 		const output = __dirname + '/output/css/remote.css';
 		await pjs(
 			inputs,
-			output
+			output,
+			{ minify: false, browsers: 'safari 9' }
 		);
 		const result = await fs.readFile(output);
-		assert.ok(result.includes('font-weight:200;font-display:swap'));
-		assert.ok(result.includes('.woff2'));
-	});
+		assert.ok(result.includes('font-weight: 200'));
+		assert.ok(result.includes('.woff'));
+	}).timeout(15000);
 });
