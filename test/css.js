@@ -96,4 +96,22 @@ describe("css bundling", () => {
 		const fonts = new Set(result.toString().match(/[-\w]+\.woff2/g) ?? []);
 		assert.equal(fonts.size, 3);
 	}).timeout(15000);
+
+	it("bundles one file and its image", async () => {
+		const inputs = [__dirname + '/css/sample3.css'];
+		const output = __dirname + '/output/css/sample3.css';
+		await pjs(
+			inputs,
+			output,
+			{ minify: false, sourceMap: false }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(
+			result.includes('background-image')
+		);
+		const filename = result.toString().match(/test-.*\.png/)[0];
+		await assert.doesNotReject(async () => {
+			await fs.access(__dirname + '/output/css/' + filename);
+		});
+	});
 });

@@ -1,5 +1,6 @@
 const { dirname, basename, extname, relative } = require('node:path');
 const { createReadStream } = require('node:fs');
+const { readFile } = require('node:fs/promises');
 
 const { build } = require("esbuild");
 const { esbuildPluginBrowserslist } = require('esbuild-plugin-browserslist');
@@ -39,17 +40,10 @@ module.exports = async function (inputs, output, options = {}) {
 				printUnknownTargets: false
 			})
 		],
-		loader: {
+		loader: Object.assign({
 			'.js': 'js',
-			'.css': 'css',
-			'.ttf': 'copy',
-			'.woff': 'copy',
-			'.woff2': 'copy',
-			'.svg': 'dataurl',
-			'.jpg': 'copy',
-			'.png': 'copy',
-			'.webp': 'copy'
-		}
+			'.css': 'css'
+		})
 	};
 
 	if (isJS) {
@@ -107,7 +101,7 @@ module.exports = async function (inputs, output, options = {}) {
 		}
 		esOpts.stdin.contents = await buffer(pt);
 	} else {
-		esOpts.plugins.push(http(userAgent));
+		esOpts.plugins.push(copy(), http(userAgent));
 		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';
 		esOpts.stdin.contents = inputs.map(input => {
@@ -123,6 +117,22 @@ module.exports = async function (inputs, output, options = {}) {
 
 function inlineMap(map) {
 	return '//# sourceMappingURL=data:application/json;charset=utf-8;base64,' + Buffer.from(map.toString()).toString('base64');
+}
+
+function copy() {
+	return {
+		name: "copy",
+		setup(build) {
+			build.onLoad({ filter: /.*/, namespace: 'file' }, async (args) => {
+				const ext = extname(args.path);
+				if (ext in build.initialOptions.loader) return;
+				return {
+					loader: "copy",
+					contents: await readFile(args.path)
+				};
+			});
+		}
+	};
 }
 
 function http(userAgent) {
@@ -174,15 +184,7 @@ function http(userAgent) {
 						}]
 					};
 				}
-				const loader = initialOptions.loader['.' + ext];
-				if (!loader) {
-					return {
-						errors: [{
-							text: 'Unknown extension',
-							detail: new Error(ext)
-						}]
-					};
-				}
+				const loader = initialOptions.loader['.' + ext] ?? 'copy';
 				const contents = new Uint8Array(await response.arrayBuffer());
 				return { contents, loader };
 			});
