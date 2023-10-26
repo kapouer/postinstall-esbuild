@@ -50,8 +50,9 @@ module.exports = async function (inputs, output, options = {}) {
 		// concatenation similar to postinstall-js
 		esOpts.bundle = false;
 		esOpts.stdin.loader = 'js';
-		let pt = new PassThrough();
+		let buf;
 		if (sourceMap) {
+			const pt = new PassThrough();
 			const sourceMapGen = new SourceMapGenerator({ file: output });
 			let offset = 0;
 			for (const input of inputs) {
@@ -81,25 +82,15 @@ module.exports = async function (inputs, output, options = {}) {
 			}
 			pt.write(inlineMap(sourceMapGen));
 			pt.end();
+			buf = await buffer(pt);
 		} else {
-			let len = inputs.length;
-			for (const input of inputs) {
-				let inputStream;
-				if (Buffer.isBuffer(input)) {
-					inputStream = new PassThrough();
-					inputStream.write(input);
-					inputStream.end();
-				} else {
-					inputStream = createReadStream(input);
-				}
-				pt = inputStream.pipe(pt, { end: false });
-				inputStream.once('error', err => {
-					pt.emit('error', err);
-				});
-				inputStream.once('end', () => --len == 0 && pt.emit('end'));
-			}
+			const buffers = await Promise.all(inputs.map(input => {
+				if (Buffer.isBuffer(input)) return input;
+				else return readFile(input);
+			}));
+			buf = Buffer.concat(buffers);
 		}
-		esOpts.stdin.contents = await buffer(pt);
+		esOpts.stdin.contents = buf;
 	} else {
 		esOpts.plugins.push(copy(), http(userAgent));
 		esOpts.bundle = true;
