@@ -26,6 +26,8 @@ require('postinstall-esbuild')(inputs, output, options).then(function() {
 
 A Browserslist query string
 
+A user-agent header matching minimum browsers version is generated for the remote http calls, if any.
+
 ### minify
 
 Pass `minify: false` to disable minification.
