@@ -42,8 +42,8 @@ module.exports = async function (inputs, output, options = {}) {
 			'.ttf': 'copy',
 			'.woff': 'copy',
 			'.woff2': 'copy',
-			'.eot': 'copy',
 			'.svg': 'dataurl',
+			'.jpg': 'copy',
 			'.png': 'copy',
 			'.webp': 'copy'
 		}
