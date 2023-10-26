@@ -81,4 +81,16 @@ describe("js bundling", () => {
 		assert.ok(result.includes('/test'));
 		assert.ok(result.includes('//# sourceMappingURL=sample3.js.map'));
 	});
+
+	it("bundles with transform private class fields", async () => {
+		const inputs = [__dirname + '/js/sample4.js'];
+		const output = __dirname + '/output/js/sample4.js';
+		await pjs(
+			inputs,
+			output,
+			{ browsers: "firefox 61", minify: true }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(result.includes('write to private field'));
+	});
 });
