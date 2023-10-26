@@ -6,7 +6,7 @@ It runs `esbuild` on inputs, and concatenate bundles on output.
 
 Supports iife js or css.
 
-Bundles remote dependencies.
+Bundles remote dependencies, otherwise assets are copied.
 
 ## Usage
 

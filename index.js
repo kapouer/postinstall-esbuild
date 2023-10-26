@@ -40,10 +40,10 @@ module.exports = async function (inputs, output, options = {}) {
 				printUnknownTargets: false
 			})
 		],
-		loader: Object.assign({
+		loader: {
 			'.js': 'js',
 			'.css': 'css'
-		})
+		}
 	};
 
 	if (isJS) {
