@@ -69,16 +69,31 @@ describe("css bundling", () => {
 		]);
 	});
 
-	it("bundles remote files", async () => {
+	it("bundles remote files and pulls non-variable fonts", async () => {
 		const inputs = [__dirname + '/css/remote.css'];
 		const output = __dirname + '/output/css/remote.css';
 		await pjs(
 			inputs,
 			output,
-			{ minify: false, browsers: 'safari 9' }
+			{ minify: false, browsers: 'firefox 61' }
 		);
 		const result = await fs.readFile(output);
-		assert.ok(result.includes('font-weight: 200'));
-		assert.ok(result.includes('.woff'));
+		assert.ok(result.includes('font-weight: 800'));
+		const fonts = new Set(result.toString().match(/[-\w]+\.woff2/g) ?? []);
+		assert.equal(fonts.size, 6);
+	}).timeout(15000);
+
+	it("bundles remote files and pulls variable fonts", async () => {
+		const inputs = [__dirname + '/css/remote.css'];
+		const output = __dirname + '/output/css/remote.css';
+		await pjs(
+			inputs,
+			output,
+			{ minify: false, browsers: 'defaults' }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(result.includes('font-weight: 800'));
+		const fonts = new Set(result.toString().match(/[-\w]+\.woff2/g) ?? []);
+		assert.equal(fonts.size, 3);
 	}).timeout(15000);
 });
