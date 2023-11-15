@@ -13,3 +13,7 @@
 
 - browsers option is also used to generate a user-agent for downloads
 - fix download bug
+
+## 0.14.0
+
+- use lightningcss for transforming css

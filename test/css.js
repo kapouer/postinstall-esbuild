@@ -18,7 +18,7 @@ describe("css bundling", () => {
 		);
 		const result = await fs.readFile(output);
 		assert.ok(
-			result.includes('body{font-size:16px}body{background:red}body{color:red}')
+			result.includes('body{background:red;font-size:16px}body{color:red}')
 		);
 		assert.ok(result.includes('/*# sourceMappingURL=sample.css.map */'));
 	});
@@ -46,7 +46,7 @@ describe("css bundling", () => {
 		);
 		const result = await fs.readFile(output);
 		assert.ok(
-			result.includes('body{font-size:16px}body{background:red}body{color:red}')
+			result.includes('body{background:red;font-size:16px}body{color:red}')
 		);
 		const obj = JSON.parse(await fs.readFile(__dirname + '/output/css/sampleBoth.css.map'));
 		assert.deepEqual(obj.sources, [
@@ -69,9 +69,23 @@ describe("css bundling", () => {
 		]);
 	});
 
-	it("bundles remote files and pulls non-variable fonts", async () => {
+	it("bundles remote imported files and pulls non-variable fonts", async () => {
 		const inputs = [__dirname + '/css/remote.css'];
 		const output = __dirname + '/output/css/remote.css';
+		await pjs(
+			inputs,
+			output,
+			{ minify: false, browsers: 'firefox 61' }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(result.includes('font-weight: 800'));
+		const fonts = new Set(result.toString().match(/[-\w]+\.woff2/g) ?? []);
+		assert.equal(fonts.size, 6);
+	}).timeout(15000);
+
+	it("bundles remote files and pulls non-variable fonts", async () => {
+		const inputs = ["https://fonts.googleapis.com/css2?family=Work+Sans:wght@800;900&display=swap"];
+		const output = __dirname + '/output/css/remote2.css';
 		await pjs(
 			inputs,
 			output,
@@ -113,5 +127,22 @@ describe("css bundling", () => {
 		await assert.doesNotReject(async () => {
 			await fs.access(__dirname + '/output/css/' + filename);
 		});
+	});
+
+	it("lowers modern css that esbuild cannot using lightning", async () => {
+		const inputs = [__dirname + '/css/sample4.css'];
+		const output = __dirname + '/output/css/sample4.css';
+		await pjs(
+			inputs,
+			output,
+			{ minify: false, sourceMap: false, browsers: 'firefox 51' }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(
+			result.includes('@media (min-width: 300px) and (max-width: 400px)')
+		);
+		assert.ok(
+			result.includes('color: #c65d07;')
+		);
 	});
 });

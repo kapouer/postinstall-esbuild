@@ -1,8 +1,9 @@
-const { dirname, basename, extname, relative } = require('node:path');
+const Path = require('node:path');
 const { createReadStream } = require('node:fs');
 const { readFile } = require('node:fs/promises');
 
 const { build } = require("esbuild");
+const { transform, browserslistToTargets } = require('lightningcss');
 const { esbuildPluginBrowserslist } = require('esbuild-plugin-browserslist');
 const browserslist = require('browserslist');
 const { SourceMapGenerator } = require('source-map');
@@ -12,9 +13,9 @@ const { PassThrough } = require('node:stream');
 const mime = require('mime/lite');
 
 module.exports = async function (inputs, output, options = {}) {
-	const isJS = extname(output) == ".js";
+	const isJS = Path.extname(output) == ".js";
 
-	const resolveDir = dirname(output);
+	const resolveDir = Path.dirname(output);
 	const sourceMap = options.sourceMap ?? false;
 
 	const browsers = browserslist(options.browsers ?? 'defaults');
@@ -27,7 +28,7 @@ module.exports = async function (inputs, output, options = {}) {
 		stdin: {
 			contents: null,
 			resolveDir,
-			sourcefile: basename(output)
+			sourcefile: Path.basename(output)
 		},
 		outfile: output,
 		write: true,
@@ -35,11 +36,7 @@ module.exports = async function (inputs, output, options = {}) {
 		minify: options.minify !== false,
 		ignoreAnnotations: true,
 		legalComments: 'none',
-		plugins: [
-			esbuildPluginBrowserslist(browsers, {
-				printUnknownTargets: false
-			})
-		],
+		plugins: [],
 		loader: {
 			'.js': 'js',
 			'.css': 'css'
@@ -48,6 +45,9 @@ module.exports = async function (inputs, output, options = {}) {
 
 	if (isJS) {
 		// concatenation similar to postinstall-js
+		esOpts.plugins.push(esbuildPluginBrowserslist(browsers, {
+			printUnknownTargets: false
+		}));
 		esOpts.bundle = Boolean(options.bundle);
 		esOpts.format = 'iife';
 		esOpts.stdin.loader = 'js';
@@ -58,7 +58,7 @@ module.exports = async function (inputs, output, options = {}) {
 			let offset = 0;
 			for (const input of inputs) {
 				let i = 0;
-				const source = relative(resolveDir, input);
+				const source = Path.relative(resolveDir, input);
 				const inputStream = createReadStream(input);
 				for await (const line of createInterface({
 					input: inputStream,
@@ -93,14 +93,16 @@ module.exports = async function (inputs, output, options = {}) {
 		}
 		esOpts.stdin.contents = buf;
 	} else {
-		esOpts.plugins.push(copy(), http(userAgent));
+		esOpts.plugins.push(copy(), http(userAgent), lightning({
+			targets: browserslistToTargets(browsers)
+		}));
 		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';
 		esOpts.stdin.contents = inputs.map(input => {
 			if (/^https?:\/\//.test(input)) {
 				return `@import "${input}";`;
 			} else {
-				return `@import "${relative(resolveDir, input)}";`;
+				return `@import "${Path.relative(resolveDir, input)}";`;
 			}
 
 		}).join('\n');
@@ -120,7 +122,7 @@ function copy() {
 		name: "copy",
 		setup(build) {
 			build.onLoad({ filter: /.*/, namespace: 'file' }, async (args) => {
-				const ext = extname(args.path);
+				const ext = Path.extname(args.path);
 				if (ext in build.initialOptions.loader) return;
 				return {
 					loader: "copy",
@@ -199,4 +201,23 @@ function browsersToUserAgent(browsers) {
 			return `Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 ${browser}/${minUa}.0`;
 		}
 	}
+}
+
+function lightning({ targets }) {
+	return {
+		name: "lightning",
+		setup({ onResolve, onLoad, initialOptions }) {
+			onLoad({ filter: /.\.css$/ }, async (args) => {
+				const { path } = args;
+				const { code, map } = transform({
+					filename: path,
+					code: await readFile(path),
+					minify: initialOptions.minify,
+					//sourceMap: true,
+					targets,
+				});
+				return { contents: code, loader: 'css' };
+			});
+		}
+	};
 }
