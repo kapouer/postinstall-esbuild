@@ -10,7 +10,6 @@ const { SourceMapGenerator } = require('source-map');
 const { createInterface } = require('node:readline/promises');
 const { buffer } = require('node:stream/consumers');
 const { PassThrough } = require('node:stream');
-const mime = require('mime/lite');
 
 module.exports = async function (inputs, output, options = {}) {
 	const isJS = Path.extname(output) == ".js";
@@ -173,7 +172,8 @@ function http(userAgent) {
 						}]
 					};
 				}
-				const ext = mime.getExtension(contentType);
+				const mime = await import('mime/lite');
+				const ext = mime.default.getExtension(contentType);
 				if (!ext) {
 					return {
 						errors: [{
