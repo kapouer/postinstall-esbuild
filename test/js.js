@@ -1,5 +1,5 @@
 const assert = require('node:assert').strict;
-const { promises: fs } = require('fs');
+const { promises: fs } = require('node:fs');
 const Path = require('node:path');
 
 const pjs = require('..');
@@ -29,7 +29,7 @@ describe("js bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{sourceMap: false, bundle: true}
+			{ sourceMap: false }
 		);
 		const result = await fs.readFile(output);
 		assert.ok(result.includes('coco'));
@@ -100,7 +100,7 @@ describe("js bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{ browsers: "firefox 61", minify: true, bundle: true, sourceMap: false }
+			{ browsers: "firefox 61", minify: true, sourceMap: false }
 		);
 		const result = await fs.readFile(output);
 		assert.ok(result.includes('toto'));
