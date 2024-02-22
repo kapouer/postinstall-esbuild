@@ -15,9 +15,7 @@ The plugin can be called directly, or through `postinstall`.
 Directly:
 
 ```js
-require('postinstall-esbuild')(inputs, output, options).then(function() {
- // done
-});
+await require('postinstall-esbuild')(inputs, output, options);
 ```
 
 ## Options
