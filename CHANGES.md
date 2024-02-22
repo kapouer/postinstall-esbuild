@@ -17,3 +17,7 @@
 ## 0.14.0
 
 - use lightningcss for transforming css
+
+## 0.15.0
+
+- fix bundle option to resolve correctly

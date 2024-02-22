@@ -1,15 +1,10 @@
 const Path = require('node:path');
-const { createReadStream } = require('node:fs');
 const { readFile } = require('node:fs/promises');
 
 const { build } = require("esbuild");
 const { transform, browserslistToTargets } = require('lightningcss');
 const { esbuildPluginBrowserslist } = require('esbuild-plugin-browserslist');
 const browserslist = require('browserslist');
-const { SourceMapGenerator } = require('source-map');
-const { createInterface } = require('node:readline/promises');
-const { buffer } = require('node:stream/consumers');
-const { PassThrough } = require('node:stream');
 
 module.exports = async function (inputs, output, options = {}) {
 	const isJS = Path.extname(output) == ".js";
@@ -29,6 +24,7 @@ module.exports = async function (inputs, output, options = {}) {
 			resolveDir,
 			sourcefile: Path.basename(output)
 		},
+		bundle: true,
 		outfile: output,
 		write: true,
 		allowOverwrite: true,
@@ -43,78 +39,39 @@ module.exports = async function (inputs, output, options = {}) {
 	};
 
 	if (isJS) {
-		// concatenation similar to postinstall-js
 		esOpts.plugins.push(esbuildPluginBrowserslist(browsers, {
 			printUnknownTargets: false
 		}));
-		esOpts.bundle = Boolean(options.bundle);
-		esOpts.format = 'iife';
 		esOpts.stdin.loader = 'js';
-		let buf;
-		if (sourceMap) {
-			const pt = new PassThrough();
-			const sourceMapGen = new SourceMapGenerator({ file: output });
-			let offset = 0;
-			for (const input of inputs) {
-				let i = 0;
-				const source = Path.relative(resolveDir, input);
-				const inputStream = createReadStream(input);
-				for await (const line of createInterface({
-					input: inputStream,
-					crlfDelay: Infinity
-				})) {
-					i += 1;
-					sourceMapGen.addMapping({
-						source,
-						original: {
-							line: i,
-							column: 0
-						},
-						generated: {
-							line: offset + i,
-							column: 0
-						}
-					});
-					pt.write(line + '\n');
-				}
-				inputStream.close();
-				offset += i;
+		esOpts.stdin.contents = inputs.map(input => {
+			if (Buffer.isBuffer(input)) {
+				return input;
+			} else if (/^https?:\/\//.test(input)) {
+				return `require("${input}");`;
+			} else {
+				return `require("${Path.relative(resolveDir, input)}");`
 			}
-			pt.write(inlineMap(sourceMapGen));
-			pt.end();
-			buf = await buffer(pt);
-		} else {
-			const buffers = await Promise.all(inputs.map(input => {
-				if (Buffer.isBuffer(input)) return input;
-				else return readFile(input);
-			}));
-			buf = Buffer.concat(buffers);
-		}
-		esOpts.stdin.contents = buf;
+		}).join('\n');
 	} else {
 		esOpts.plugins.push(copy(), http(userAgent), lightning({
 			targets: browserslistToTargets(browsers)
 		}));
-		esOpts.bundle = true;
 		esOpts.stdin.loader = 'css';
 		esOpts.stdin.contents = inputs.map(input => {
-			if (/^https?:\/\//.test(input)) {
+			if (Buffer.isBuffer(input)) {
+				return input;
+			} else if (/^https?:\/\//.test(input)) {
 				return `@import "${input}";`;
 			} else {
 				return `@import "${Path.relative(resolveDir, input)}";`;
 			}
-
 		}).join('\n');
 	}
-	const result = await build(esOpts);
-	const { errors, warnings } = result;
+
+	const { errors, warnings } = await build(esOpts);
 	if (errors.length) throw new Error(errors.join('\n'));
 	if (warnings.length) console.warn(warnings.join('\n'));
 };
-
-function inlineMap(map) {
-	return '//# sourceMappingURL=data:application/json;charset=utf-8;base64,' + Buffer.from(map.toString()).toString('base64');
-}
 
 function copy() {
 	return {
@@ -207,13 +164,12 @@ function lightning({ targets }) {
 	return {
 		name: "lightning",
 		setup({ onResolve, onLoad, initialOptions }) {
-			onLoad({ filter: /.\.css$/ }, async (args) => {
-				const { path } = args;
-				const { code, map } = transform({
+			onLoad({ filter: /.\.css$/ }, async ({ path }) => {
+				const { code } = transform({
+					errorRecovery: false,
 					filename: path,
 					code: await readFile(path),
 					minify: initialOptions.minify,
-					//sourceMap: true,
 					targets,
 				});
 				return { contents: code, loader: 'css' };

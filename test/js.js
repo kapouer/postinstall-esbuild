@@ -28,7 +28,7 @@ describe("js bundling", () => {
 		await pjs(
 			inputs,
 			output,
-			{sourceMap: false}
+			{sourceMap: false, bundle: true}
 		);
 		const result = await fs.readFile(output);
 		assert.ok(result.includes('coco'));
@@ -58,13 +58,12 @@ describe("js bundling", () => {
 	it("bundles independent files without sourceMap and with an error", async () => {
 		const inputs = [__dirname + '/js/sample1.js', __dirname + '/js/sampleFail.js'];
 		const output = __dirname + '/output/js/sample.js';
-		await assert.rejects(async () => pjs(
+		await assert.rejects(() => pjs(
 			inputs,
 			output,
 			{ sourceMap: false }
 		), {
-			name: 'Error',
-			code: 'ENOENT'
+			name: 'Error'
 		});
 	});
 
@@ -92,5 +91,17 @@ describe("js bundling", () => {
 		);
 		const result = await fs.readFile(output);
 		assert.ok(result.includes('write to private field'));
+	});
+
+	it("bundles files that use require", async () => {
+		const inputs = [__dirname + '/require/index.js'];
+		const output = __dirname + '/output/require.js';
+		await pjs(
+			inputs,
+			output,
+			{ browsers: "firefox 61", minify: true, bundle: true, sourceMap: false }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(result.includes('toto'));
 	});
 });
