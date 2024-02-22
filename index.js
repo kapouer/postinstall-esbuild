@@ -37,6 +37,7 @@ module.exports = async function (inputs, output, options = {}) {
 			'.css': 'css'
 		}
 	};
+	if (options.cwd) esOpts.absWorkingDir = Path.resolve(options.cwd);
 
 	if (isJS) {
 		esOpts.plugins.push(esbuildPluginBrowserslist(browsers, {

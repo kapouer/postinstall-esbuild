@@ -1,5 +1,6 @@
 const assert = require('node:assert').strict;
 const { promises: fs } = require('fs');
+const Path = require('node:path');
 
 const pjs = require('..');
 
@@ -102,6 +103,18 @@ describe("js bundling", () => {
 			{ browsers: "firefox 61", minify: true, bundle: true, sourceMap: false }
 		);
 		const result = await fs.readFile(output);
+		assert.ok(result.includes('toto'));
+	});
+
+	it("bundles files that use require without relative path", async () => {
+		const inputs = ['require/index.js'];
+		const output = 'output/require.js';
+		await pjs(
+			inputs,
+			output,
+			{ sourceMap: false, cwd: 'test' }
+		);
+		const result = await fs.readFile(Path.join(__dirname, output));
 		assert.ok(result.includes('toto'));
 	});
 });

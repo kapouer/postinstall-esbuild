@@ -37,3 +37,7 @@ Pass `sourceMap: true` to output "*.map" source maps.
 Pass `sourceMap: false` to disable and allow passing Buffers in inputs.
 
 For now, css source maps might not be correct (lightning does not pass map to esbuild).
+
+### cwd
+
+Change working directory.
