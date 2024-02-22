@@ -4,7 +4,7 @@ This is a [postinstall](http://github.com/kapouer/postinstall) command plugin.
 
 It runs `esbuild` on inputs, and concatenate bundles on output.
 
-Supports iife js or css.
+Supports Buffer, remote URL, or local paths.
 
 Bundles remote dependencies, otherwise assets are copied.
 
@@ -35,3 +35,5 @@ Pass `minify: false` to disable minification.
 Pass `sourceMap: true` to output "*.map" source maps.
 
 Pass `sourceMap: false` to disable and allow passing Buffers in inputs.
+
+For now, css source maps might not be correct (lightning does not pass map to esbuild).
