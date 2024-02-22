@@ -50,7 +50,7 @@ module.exports = async function (inputs, output, options = {}) {
 			} else if (/^https?:\/\//.test(input)) {
 				return `require("${input}");`;
 			} else {
-				return `require("${Path.relative(resolveDir, input)}");`
+				return `require("${relativePath(resolveDir, input)}");`
 			}
 		}).join('\n');
 	} else {
@@ -64,7 +64,7 @@ module.exports = async function (inputs, output, options = {}) {
 			} else if (/^https?:\/\//.test(input)) {
 				return `@import "${input}";`;
 			} else {
-				return `@import "${Path.relative(resolveDir, input)}";`;
+				return `@import "${relativePath(resolveDir, input)}";`;
 			}
 		}).join('\n');
 	}
@@ -73,6 +73,12 @@ module.exports = async function (inputs, output, options = {}) {
 	if (errors.length) throw new Error(errors.join('\n'));
 	if (warnings.length) console.warn(warnings.join('\n'));
 };
+
+function relativePath(from, to) {
+	const str = Path.relative(from, to);
+	if (/^\.?\//.test(str)) return str;
+	else return './' + str;
+}
 
 function copy() {
 	return {
