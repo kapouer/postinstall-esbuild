@@ -1,6 +1,6 @@
 {
   "name": "postinstall-esbuild",
-  "version": "0.13.3",
+  "version": "0.14.0",
   "description": "postinstall to bundle and minify lists of js/css using esbuild",
   "main": "index.js",
   "scripts": {
