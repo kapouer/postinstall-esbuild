@@ -1,6 +1,6 @@
 {
   "name": "postinstall-esbuild",
-  "version": "0.14.7",
+  "version": "0.14.8",
   "description": "postinstall to bundle and minify lists of js/css using esbuild",
   "main": "index.js",
   "scripts": {
@@ -21,17 +21,17 @@
   },
   "homepage": "https://github.com/kapouer/postinstall-esbuild#readme",
   "dependencies": {
-    "browserslist": "^4.23.3",
-    "esbuild": "^0.23.1",
-    "esbuild-plugin-browserslist": "^0.14.0",
-    "lightningcss": "^1.27.0",
+    "browserslist": "^4.24.2",
+    "esbuild": "^0.24.0",
+    "esbuild-plugin-browserslist": "^0.15.0",
+    "lightningcss": "^1.28.1",
     "mime": "^4.0.4",
     "postinstall": "^0.11.0",
     "source-map": "^0.7.4"
   },
   "devDependencies": {
     "@kapouer/eslint-config": "^2.0.0",
-    "mocha": "^10.7.3"
+    "mocha": "^10.8.2"
   },
   "mocha": {
     "exit": true
