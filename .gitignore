@@ -59,3 +59,4 @@ typings/
 
 /test/output
 
+/pnpm-lock.yaml
