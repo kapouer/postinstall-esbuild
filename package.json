@@ -48,5 +48,10 @@
         }
       }
     ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
