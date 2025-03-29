@@ -145,4 +145,18 @@ describe("css bundling", () => {
 			result.includes('color: #c65d07;')
 		);
 	});
+
+	it("simplifies but doesn't resolve css @layer", async () => {
+		const inputs = [__dirname + '/css/layers.css'];
+		const output = __dirname + '/output/css/layers.css';
+		await pjs(
+			inputs,
+			output,
+			{ minify: true, sourceMap: false, browsers: 'firefox 20' }
+		);
+		const result = await fs.readFile(output);
+		assert.ok(
+			result.includes('@layer theme{p{color:green}}@layer layout{p{color:red;border-color:#00f}}')
+		);
+	});
 });

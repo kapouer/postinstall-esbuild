@@ -1,0 +1,14 @@
+@layer theme, layout;
+
+@layer layout {
+	p {
+		border-color:blue;
+		color:red;
+	}
+}
+
+@layer theme {
+	p {
+		color:green;
+	}
+}
