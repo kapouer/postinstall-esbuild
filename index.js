@@ -50,7 +50,7 @@ module.exports = async function (inputs, output, options = {}) {
 			} else if (/^https?:\/\//.test(input)) {
 				return `require("${input}");`;
 			} else {
-				return `require("${relativePath(resolveDir, input)}");`
+				return `require("${relativePath(resolveDir, input)}");`;
 			}
 		}).join('\n');
 	} else {
