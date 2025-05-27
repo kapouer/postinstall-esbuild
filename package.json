@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@kapouer/eslint-config": "^2.1.1",
-    "mocha": "^11.4.0"
+    "mocha": "^11.5.0"
   },
   "mocha": {
     "exit": true
